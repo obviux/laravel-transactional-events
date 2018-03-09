@@ -228,6 +228,11 @@ class TransactionalDispatcher implements DispatcherContract
      */
     private function shouldHandle($event)
     {
+        
+        if (!config('transactional-events.enable')) {
+            return false;
+        }
+        
         if ($event instanceof TransactionalEvent) {
             return true;
         }
