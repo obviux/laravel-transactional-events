@@ -19,7 +19,7 @@ class EventServiceProvider extends ServiceProvider
             'transactional-events'
         );
 
-        if (! $this->app['config']->get('transactional-events.enable')) {
+        if (! config('transactional-events.enable')) {
             return;
         }
 
@@ -27,8 +27,8 @@ class EventServiceProvider extends ServiceProvider
         $eventDispatcher = $this->app->make(EventDispatcher::class);
         $this->app->extend('events', function () use ($connectionResolver, $eventDispatcher) {
             $dispatcher = new TransactionalDispatcher($connectionResolver, $eventDispatcher);
-            $dispatcher->setTransactionalEvents($this->app['config']->get('transactional-events.transactional'));
-            $dispatcher->setExcludedEvents($this->app['config']->get('transactional-events.excluded'));
+            $dispatcher->setTransactionalEvents(config('transactional-events.transactional'));
+            $dispatcher->setExcludedEvents(config('transactional-events.excluded'));
 
             return $dispatcher;
         });
