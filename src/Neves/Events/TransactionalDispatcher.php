@@ -56,8 +56,8 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Create a new transactional event dispatcher instance.
      *
-     * @param  \Illuminate\Database\ConnectionResolverInterface  $connectionResolver
-     * @param  \Illuminate\Contracts\Events\Dispatcher  $eventDispatcher
+     * @param  \Illuminate\Database\ConnectionResolverInterface $connectionResolver
+     * @param  \Illuminate\Contracts\Events\Dispatcher          $eventDispatcher
      */
     public function __construct(ConnectionResolverInterface $connectionResolver, EventDispatcher $eventDispatcher)
     {
@@ -70,8 +70,9 @@ class TransactionalDispatcher implements DispatcherContract
      * Dispatch an event and call the listeners.
      *
      * @param  string|object $event
-     * @param  mixed $payload
-     * @param  bool $halt
+     * @param  mixed         $payload
+     * @param  bool          $halt
+     *
      * @return array|null
      */
     public function dispatch($event, $payload = [], $halt = false)
@@ -82,7 +83,7 @@ class TransactionalDispatcher implements DispatcherContract
         // If halt is specified, then automatically dispatches the event
         // to the original dispatcher. This happens because the caller
         // is waiting for the result of the listeners of this event.
-        if ($halt || ! $this->isTransactionalEvent($connection, $event)) {
+        if ($halt || !$this->isTransactionalEvent($connection, $event)) {
             return $this->dispatcher->dispatch($event, $payload, $halt);
         }
 
@@ -92,7 +93,8 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Flush all pending events.
      *
-     * @param  \Illuminate\Database\ConnectionInterface  $connection
+     * @param  \Illuminate\Database\ConnectionInterface $connection
+     *
      * @return void
      */
     public function commit(ConnectionInterface $connection)
@@ -102,7 +104,7 @@ class TransactionalDispatcher implements DispatcherContract
         // Now prevent events to be dispatched when nested transactions are
         // committed, so no intermediate state is considered actual saved.
         // We dispatch events only after the outer transaction commits.
-        if ($connection->transactionLevel() > 0 || ! isset($this->pendingEvents[$connectionId])) {
+        if ($connection->transactionLevel() > 0 || !isset($this->pendingEvents[$connectionId])) {
             return;
         }
 
@@ -112,7 +114,8 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Prepare to store events for the current transaction.
      *
-     * @param  \Illuminate\Database\ConnectionInterface  $connection
+     * @param  \Illuminate\Database\ConnectionInterface $connection
+     *
      * @return void
      */
     protected function prepareTransaction($connection)
@@ -129,9 +132,10 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Add a transactional event waiting for transaction to commit.
      *
-     * @param  \Illuminate\Database\ConnectionInterface  $connection
-     * @param  string|object $event
-     * @param  mixed $payload
+     * @param  \Illuminate\Database\ConnectionInterface $connection
+     * @param  string|object                            $event
+     * @param  mixed                                    $payload
+     *
      * @return void
      */
     protected function addPendingEvent($connection, $event, $payload)
@@ -147,7 +151,8 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Flush all pending events for the given connection.
      *
-     * @param  \Illuminate\Database\ConnectionInterface  $connection
+     * @param  \Illuminate\Database\ConnectionInterface $connection
+     *
      * @return void
      */
     protected function dispatchPendingEvents(ConnectionInterface $connection)
@@ -167,7 +172,8 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Clear enqueued events.
      *
-     * @param  \Illuminate\Database\ConnectionInterface  $connection
+     * @param  \Illuminate\Database\ConnectionInterface $connection
+     *
      * @return void
      */
     public function rollback(ConnectionInterface $connection)
@@ -185,7 +191,8 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Set list of events that should be handled by transactional layer.
      *
-     * @param  array|null  $transactional
+     * @param  array|null $transactional
+     *
      * @return void
      */
     public function setTransactionalEvents(array $transactional)
@@ -196,7 +203,8 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Set exceptions list.
      *
-     * @param  array  $excluded
+     * @param  array $excluded
+     *
      * @return void
      */
     public function setExcludedEvents(array $excluded = [])
@@ -207,8 +215,9 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Check whether an event is a transactional event or not.
      *
-     * @param  \Illuminate\Database\ConnectionInterface  $connection
-     * @param  string|object $event
+     * @param  \Illuminate\Database\ConnectionInterface $connection
+     * @param  string|object                            $event
+     *
      * @return bool
      */
     private function isTransactionalEvent(ConnectionInterface $connection, $event)
@@ -223,11 +232,16 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Check whether an event should be handled by this layer or not.
      *
-     * @param  string|object  $event
+     * @param  string|object $event
+     *
      * @return bool
      */
     private function shouldHandle($event)
     {
+        if (!config('transactional-events.enable')) {
+            return false;
+        }
+        
         if ($event instanceof TransactionalEvent) {
             return true;
         }
@@ -252,8 +266,9 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Check whether an event name matches a pattern or not.
      *
-     * @param  string  $pattern
-     * @param  string  $event
+     * @param  string $pattern
+     * @param  string $event
+     *
      * @return bool
      */
     private function matches($pattern, $event)
@@ -266,7 +281,8 @@ class TransactionalDispatcher implements DispatcherContract
      * Register an event listener with the dispatcher.
      *
      * @param  string|array $events
-     * @param  mixed $listener
+     * @param  mixed        $listener
+     *
      * @return void
      */
     public function listen($events, $listener)
@@ -278,6 +294,7 @@ class TransactionalDispatcher implements DispatcherContract
      * Determine if a given event has listeners.
      *
      * @param  string $eventName
+     *
      * @return bool
      */
     public function hasListeners($eventName)
@@ -289,6 +306,7 @@ class TransactionalDispatcher implements DispatcherContract
      * Register an event subscriber with the dispatcher.
      *
      * @param  object|string $subscriber
+     *
      * @return void
      */
     public function subscribe($subscriber)
@@ -300,7 +318,8 @@ class TransactionalDispatcher implements DispatcherContract
      * Dispatch an event until the first non-null response is returned.
      *
      * @param  string|object $event
-     * @param  mixed $payload
+     * @param  mixed         $payload
+     *
      * @return array|null
      */
     public function until($event, $payload = [])
@@ -311,9 +330,10 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Fire an event and call the listeners.
      *
-     * @param  string|object  $event
-     * @param  mixed  $payload
-     * @param  bool  $halt
+     * @param  string|object $event
+     * @param  mixed         $payload
+     * @param  bool          $halt
+     *
      * @return array|null
      */
     public function fire($event, $payload = [], $halt = false)
@@ -325,7 +345,8 @@ class TransactionalDispatcher implements DispatcherContract
      * Register an event and payload to be fired later.
      *
      * @param  string $event
-     * @param  array $payload
+     * @param  array  $payload
+     *
      * @return void
      */
     public function push($event, $payload = [])
@@ -337,6 +358,7 @@ class TransactionalDispatcher implements DispatcherContract
      * Flush a set of pushed events.
      *
      * @param  string $event
+     *
      * @return void
      */
     public function flush($event)
@@ -348,6 +370,7 @@ class TransactionalDispatcher implements DispatcherContract
      * Remove a set of listeners from the dispatcher.
      *
      * @param  string $event
+     *
      * @return void
      */
     public function forget($event)
@@ -368,8 +391,9 @@ class TransactionalDispatcher implements DispatcherContract
     /**
      * Dynamically pass methods to the default dispatcher.
      *
-     * @param  string  $method
-     * @param  array   $parameters
+     * @param  string $method
+     * @param  array  $parameters
+     *
      * @return mixed
      */
     public function __call($method, $parameters)
